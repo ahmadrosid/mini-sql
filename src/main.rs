@@ -1,3 +1,8 @@
+mod document;
+mod query;
+mod repl;
+mod storage;
+
 fn main() {
-    println!("Hello, world!");
+    repl::run().unwrap();
 }
