@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::query::{self, Token};
+use crate::{query::{self, Token}, document::Table};
 
 fn print_version() {
     println!(
@@ -27,6 +27,7 @@ pub fn run() -> io::Result<()> {
     let stdin = io::stdin();
     print_version();
 
+    let mut table = Table::new();
     loop {
         print!("mini-sql> ");
         let _ = io::stdout().flush();
@@ -39,14 +40,15 @@ pub fn run() -> io::Result<()> {
             _ => {
                 let tokens = query::parse(&buf).unwrap();
                 match tokens.get(0).unwrap() {
+                    Token::INSERT => {
+                        let values = vec!["1", "alahmadrosid@gmail.com"];
+                        table.insert(values);
+                    }
                     Token::SELECT => {
-                        println!("Execute select query");
+                        table.select();
                     }
                     Token::CREATE => {
                         println!("Execute create query");
-                    }
-                    Token::INSERT => {
-                        println!("Execute insert query");
                     }
                     Token::DELETE => {
                         println!("Execute delete query");
