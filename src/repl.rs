@@ -39,6 +39,10 @@ pub fn run() -> io::Result<()> {
             "\\h" => print_command(),
             _ => {
                 let tokens = query::parse(&buf).unwrap();
+                if tokens.is_empty() {
+                    break;
+                }
+                
                 match tokens.get(0).unwrap() {
                     Token::INSERT => {
                         let values = vec!["1", "alahmadrosid@gmail.com"];
