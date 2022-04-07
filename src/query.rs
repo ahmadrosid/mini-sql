@@ -3,6 +3,7 @@ pub enum Token {
     CREATE,
     INSERT,
     INTO,
+    VALUES,
     LPARENT,
     RPARENT,
     COMMA,
@@ -16,6 +17,7 @@ pub fn get_keyword_token<'a>(value: String) -> Token {
         "create" => Token::CREATE,
         "insert" => Token::INSERT,
         "into" => Token::INTO,
+        "values" => Token::VALUES,
         "database" => Token::DATABASE,
         _ => Token::IDENTIFIER(value.to_string()),
     }
@@ -111,10 +113,6 @@ mod query_test {
         let actual_tokens = parse("create database users").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
 
-        let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("users1".to_string())];
-        let actual_tokens = parse("create database users1").unwrap();
-        assert_eq!(expected_tokens, actual_tokens);
-
         let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("users_1".to_string())];
         let actual_tokens = parse("create database users_1").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
@@ -124,10 +122,6 @@ mod query_test {
     pub fn create_insert_query() {
         let expected_tokens = vec![INSERT, INTO, IDENTIFIER("role".to_string())];
         let actual_tokens = parse("insert into role").unwrap();
-        assert_eq!(expected_tokens, actual_tokens);
-
-        let expected_tokens = vec![INSERT, INTO, IDENTIFIER("role1".to_string())];
-        let actual_tokens = parse("insert into role1").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
 
         let expected_tokens = vec![INSERT, INTO, IDENTIFIER("role_1".to_string())];
@@ -145,6 +139,24 @@ mod query_test {
             RPARENT,
         ];
         let actual_tokens = parse("insert into role_1 (column1, column2)").unwrap();
+        assert_eq!(expected_tokens, actual_tokens);
+
+        let expected_tokens = vec![
+            INSERT,
+            INTO,
+            IDENTIFIER("role_1".to_string()),
+            LPARENT,
+            IDENTIFIER("column1".to_string()),
+            COMMA,
+            IDENTIFIER("column2".to_string()),
+            RPARENT,
+            VALUES,
+            LPARENT,
+            IDENTIFIER("val1".to_string()),
+            COMMA, IDENTIFIER("val2".to_string()),
+            RPARENT
+        ];
+        let actual_tokens = parse("INSERT INTO role_1 (column1, column2) VALUES (val1, val2)").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
     }
 }
