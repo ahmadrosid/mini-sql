@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::query;
+use crate::query::{self, Token};
 
 fn print_version() {
     println!(
@@ -37,7 +37,24 @@ pub fn run() -> io::Result<()> {
             "\\q" => break,
             "\\h" => print_command(),
             _ => {
-                let _ = query::parse(&buf).unwrap();
+                let tokens = query::parse(&buf).unwrap();
+                match tokens.get(0).unwrap() {
+                    Token::SELECT => {
+                        println!("Execute select query");
+                    }
+                    Token::CREATE => {
+                        println!("Execute create query");
+                    }
+                    Token::INSERT => {
+                        println!("Execute insert query");
+                    }
+                    Token::DELETE => {
+                        println!("Execute delete query");
+                    }
+                    _ => {
+                        println!("Unrecognized query {}", buf);
+                    }
+                }
             }
         }
     }
