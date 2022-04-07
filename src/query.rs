@@ -1,5 +1,6 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
+    SELECT,
     CREATE,
     INSERT,
     DELETE,
@@ -9,6 +10,7 @@ pub enum Token {
     RPARENT,
     EQ,
     COMMA,
+    ASTERISK,
     FROM,
     WHERE,
     DATABASE,
@@ -18,6 +20,7 @@ pub enum Token {
 
 pub fn get_keyword_token<'a>(value: String) -> Token {
     match &value.to_lowercase()[..] {
+        "select" => Token::SELECT,
         "create" => Token::CREATE,
         "insert" => Token::INSERT,
         "delete" => Token::DELETE,
@@ -58,6 +61,7 @@ pub fn next_token(position: usize, chars: &Vec<char>) -> Option<(usize, Token)> 
         ')' => tok = Token::RPARENT,
         ',' => tok = Token::COMMA,
         '=' => tok = Token::EQ,
+        '*' => tok = Token::ASTERISK,
         _ => {
             let mut identifier: Vec<&char> = vec![];
             if ch.is_alphanumeric() || ch.eq(&'_') {
@@ -116,7 +120,14 @@ mod query_test {
     use crate::query::Token::*;
 
     #[test]
-    pub fn create_db_query() {
+    pub fn select_query() {
+        let expected_tokens = vec![SELECT, ASTERISK, FROM, IDENTIFIER("table_name".to_string())];
+        let actual_tokens = parse("SELECT * FROM table_name").unwrap();
+        assert_eq!(expected_tokens, actual_tokens);
+    }
+
+    #[test]
+    pub fn create_database_query() {
         let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("users".to_string())];
         let actual_tokens = parse("create database users").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
@@ -127,7 +138,7 @@ mod query_test {
     }
 
     #[test]
-    pub fn create_insert_query() {
+    pub fn insert_query() {
         let expected_tokens = vec![INSERT, INTO, IDENTIFIER("role".to_string())];
         let actual_tokens = parse("insert into role").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
@@ -171,7 +182,7 @@ mod query_test {
     }
 
     #[test]
-    pub fn test_delete_query() {
+    pub fn delete_query() {
         let expected_tokens = vec![
             DELETE,
             FROM,
