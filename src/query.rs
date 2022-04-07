@@ -128,12 +128,12 @@ mod query_test {
 
     #[test]
     pub fn create_database_query() {
-        let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("users".to_string())];
-        let actual_tokens = parse("create database users").unwrap();
+        let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("table_name".to_string())];
+        let actual_tokens = parse("create database table_name").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
 
-        let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("users_1".to_string())];
-        let actual_tokens = parse("create database users_1").unwrap();
+        let expected_tokens = vec![CREATE, DATABASE, IDENTIFIER("table_name_1".to_string())];
+        let actual_tokens = parse("create database table_name_1").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
     }
 
