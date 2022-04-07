@@ -2,22 +2,29 @@
 pub enum Token {
     CREATE,
     INSERT,
+    DELETE,
     INTO,
     VALUES,
     LPARENT,
     RPARENT,
+    EQ,
     COMMA,
+    FROM,
+    WHERE,
     DATABASE,
     IDENTIFIER(String),
-    ILLEGAL
+    ILLEGAL,
 }
 
 pub fn get_keyword_token<'a>(value: String) -> Token {
     match &value.to_lowercase()[..] {
         "create" => Token::CREATE,
         "insert" => Token::INSERT,
+        "delete" => Token::DELETE,
         "into" => Token::INTO,
         "values" => Token::VALUES,
+        "from" => Token::FROM,
+        "where" => Token::WHERE,
         "database" => Token::DATABASE,
         _ => Token::IDENTIFIER(value.to_string()),
     }
@@ -28,7 +35,7 @@ pub fn skip_whitespace(position: usize, chars: &Vec<char>) -> Option<usize> {
     if !ch.is_whitespace() {
         return Some(position + 1);
     }
-    
+
     let mut next_post = position + 1;
     loop {
         let ch = chars.get(next_post)?;
@@ -50,6 +57,7 @@ pub fn next_token(position: usize, chars: &Vec<char>) -> Option<(usize, Token)> 
         '(' => tok = Token::LPARENT,
         ')' => tok = Token::RPARENT,
         ',' => tok = Token::COMMA,
+        '=' => tok = Token::EQ,
         _ => {
             let mut identifier: Vec<&char> = vec![];
             if ch.is_alphanumeric() || ch.eq(&'_') {
@@ -153,10 +161,27 @@ mod query_test {
             VALUES,
             LPARENT,
             IDENTIFIER("val1".to_string()),
-            COMMA, IDENTIFIER("val2".to_string()),
-            RPARENT
+            COMMA,
+            IDENTIFIER("val2".to_string()),
+            RPARENT,
         ];
-        let actual_tokens = parse("INSERT INTO role_1 (column1, column2) VALUES (val1, val2)").unwrap();
+        let actual_tokens =
+            parse("INSERT INTO role_1 (column1, column2) VALUES (val1, val2)").unwrap();
+        assert_eq!(expected_tokens, actual_tokens);
+    }
+
+    #[test]
+    pub fn test_delete_query() {
+        let expected_tokens = vec![
+            DELETE,
+            FROM,
+            IDENTIFIER("table_name".to_string()),
+            WHERE,
+            IDENTIFIER("id".to_string()),
+            EQ,
+            IDENTIFIER("1".to_string()),
+        ];
+        let actual_tokens = parse("DELETE FROM table_name WHERE id = 1").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
     }
 }
