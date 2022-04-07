@@ -1,5 +1,3 @@
-use std::str::Chars;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     CREATE,
@@ -10,6 +8,7 @@ pub enum Token {
     COMMA,
     DATABASE,
     IDENTIFIER(String),
+    ILLEGAL
 }
 
 pub fn get_keyword_token<'a>(value: String) -> Token {
@@ -22,8 +21,27 @@ pub fn get_keyword_token<'a>(value: String) -> Token {
     }
 }
 
-pub fn next_token(chars: &mut Chars) -> Option<Token> {
-    let ch = chars.next()?;
+pub fn skip_whitespace(position: usize, chars: &Vec<char>) -> Option<usize> {
+    let ch = chars.get(position)?;
+    if !ch.is_whitespace() {
+        return Some(position + 1);
+    }
+    
+    let mut next_post = position + 1;
+    loop {
+        let ch = chars.get(next_post)?;
+        if ch.is_whitespace() {
+            next_post += 1;
+        } else {
+            break;
+        }
+    }
+
+    Some(next_post)
+}
+
+pub fn next_token(position: usize, chars: &Vec<char>) -> Option<(usize, Token)> {
+    let ch = chars.get(position)?;
 
     let tok: Token;
     match ch {
@@ -31,42 +49,52 @@ pub fn next_token(chars: &mut Chars) -> Option<Token> {
         ')' => tok = Token::RPARENT,
         ',' => tok = Token::COMMA,
         _ => {
-            let mut identifier: Vec<char> = vec![];
+            let mut identifier: Vec<&char> = vec![];
             if ch.is_alphanumeric() || ch.eq(&'_') {
                 identifier.push(ch);
             }
 
-            loop {
-                if let Some(ch) = chars.next() {
-                    if ch.is_alphanumeric() || ch.eq(&'_') {
-                        identifier.push(ch);
-                    } else {
-                        break;
-                    }
+            let mut next_pos = skip_whitespace(position, chars)?;
+            while next_pos < chars.len() {
+                let ch = chars.get(next_pos)?;
+                if ch.is_alphanumeric() || ch.eq(&'_') {
+                    identifier.push(ch);
                 } else {
+                    next_pos -= 1;
                     break;
                 }
+                next_pos += 1;
             }
 
-            let value = identifier.iter().collect::<String>();
+            let value = identifier.into_iter().collect::<String>();
+            if value.is_empty() {
+                return Some((next_pos, Token::ILLEGAL));
+            }
+
             let token = get_keyword_token(value);
-            return Some(token);
+            return Some((next_pos, token));
         }
     };
 
-    Some(tok)
+    Some((position, tok))
 }
 
 pub fn parse(query: &str) -> Option<Vec<Token>> {
-    let mut chars = query.chars();
+    let chars: Vec<char> = query.chars().collect();
     let mut tokens: Vec<Token> = vec![];
 
+    let mut position = 0;
     loop {
-        let token = next_token(&mut chars);
+        let token = next_token(position, &chars);
         if token.is_none() {
             break;
         }
-        tokens.push(token?);
+
+        let (pos, token) = token?;
+        if token != Token::ILLEGAL {
+            tokens.push(token);
+        }
+        position = pos + 1;
     }
 
     Some(tokens)
@@ -75,7 +103,6 @@ pub fn parse(query: &str) -> Option<Vec<Token>> {
 #[cfg(test)]
 mod query_test {
     use crate::query::parse;
-    use crate::query::Token;
     use crate::query::Token::*;
 
     #[test]
@@ -111,10 +138,11 @@ mod query_test {
             INSERT,
             INTO,
             IDENTIFIER("role_1".to_string()),
-            Token::LPARENT,
-            Token::IDENTIFIER("column1".to_string()),
-            Token::IDENTIFIER("column2".to_string()),
-            // Token::RPARENT, // fix this
+            LPARENT,
+            IDENTIFIER("column1".to_string()),
+            COMMA,
+            IDENTIFIER("column2".to_string()),
+            RPARENT,
         ];
         let actual_tokens = parse("insert into role_1 (column1, column2)").unwrap();
         assert_eq!(expected_tokens, actual_tokens);
